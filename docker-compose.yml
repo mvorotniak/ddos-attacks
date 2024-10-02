@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  attacker:
+    build:
+      context: .
+      dockerfile: Dockerfile_attacker
+    container_name: attacker
+    networks:
+      ddos_net:
+        ipv4_address: 172.15.0.2
+    depends_on:
+      - defender_no_protection
+      - defender_with_protection
+
+  defender_no_protection:
+    image: nginx:alpine
+    container_name: defender_no_protection
+    volumes:
+      - ./website/home.html:/var/www/html/index.html
+      - ./nginx/nginx_no_protection.conf:/etc/nginx/nginx.conf
+    ports:
+      - "8080:80"
+    networks:
+      ddos_net:
+        ipv4_address: 172.15.0.3
+
+  defender_with_protection:
+    image: nginx:alpine
+    container_name: defender_with_protection
+    volumes:
+      - ./website/home.html:/var/www/html/index.html
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "8081:81"
+    networks:
+      ddos_net:
+        ipv4_address: 172.15.0.4
+        
+networks:
+  ddos_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.15.0.0/16
+          gateway: 172.15.0.1
